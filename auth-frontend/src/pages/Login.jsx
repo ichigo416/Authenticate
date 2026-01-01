@@ -1,5 +1,5 @@
 // src/pages/Login.jsx
-import { useState } from "react";
+import { useState, useEffect } from "react"; // ✅ useEffect ADDED
 import { Link, useNavigate } from "react-router-dom";
 import api from "../api";
 import { useAuth } from "../context/AuthContext";
@@ -28,6 +28,41 @@ const Login = () => {
       );
     }
   };
+
+  // =======================
+  // ✅ GOOGLE SIGN-IN ADDITION
+  // =======================
+  useEffect(() => {
+    if (!window.google) return;
+
+    window.google.accounts.id.initialize({
+      client_id: "351970370806-qg2ia7bnehbmc6a5h8ne34igh28918d5.apps.googleusercontent.com", // 🔴 replace
+      callback: handleGoogleLogin,
+    });
+
+    window.google.accounts.id.renderButton(
+      document.getElementById("googleSignIn"),
+      {
+        theme: "outline",
+        size: "large",
+        width: "100%",
+      }
+    );
+  }, []);
+
+  const handleGoogleLogin = async (response) => {
+    try {
+      const res = await api.post("/auth/google", {
+        token: response.credential,
+      });
+
+      login(res.data.user, res.data.token);
+      navigate("/dashboard");
+    } catch (err) {
+      setError("Google Sign-In failed. Please try again.");
+    }
+  };
+  // =======================
 
   return (
     <div className="auth-container">
@@ -58,6 +93,12 @@ const Login = () => {
             Login
           </button>
         </form>
+
+        {/* ✅ Google Sign-In UI (ADDED ONLY) */}
+        <div style={{ marginTop: "16px", textAlign: "center" }}>
+          <div style={{ margin: "8px 0", color: "#777" }}>OR</div>
+          <div id="googleSignIn"></div>
+        </div>
 
         <p className="auth-footer">
           Don&apos;t have an account? <Link to="/register">Register</Link>
